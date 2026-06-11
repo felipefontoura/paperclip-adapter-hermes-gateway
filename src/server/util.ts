@@ -180,24 +180,67 @@ export function readBundleEntry(ctx: any): string {
   try {
     const config = ctx?.agent?.adapterConfig ?? {};
 
-    // 1) Explicit path wins (Paperclip injects instructionsFilePath at runtime
-    //    when supportsInstructionsBundle is true on the adapter).
+    // Hermes Agent (CLI) traditionally loads four files in tiers — SOUL.md
+    // (identity), AGENTS.md (context), HEARTBEAT.md (cadence), TOOLS.md
+    // (tools). On the local-CLI integration the agent process read them
+    // straight off disk. The HTTP-gateway adapter has to reproduce that
+    // bundle on the wire — otherwise an operator who already maintains
+    // a SOUL.md / HEARTBEAT.md / TOOLS.md in their agent's instructions
+    // directory silently loses every tier except AGENTS.md.
+    //
+    // Order matches Hermes' own load order so the system message reads
+    // naturally — identity first, then context, cadence, tools.
+    const tierOrder = ["SOUL.md", "AGENTS.md", "HEARTBEAT.md", "TOOLS.md"];
+
+    // 1) Explicit single file wins (Paperclip injects instructionsFilePath
+    //    at runtime when supportsInstructionsBundle is true on the
+    //    adapter). When set, we ignore tier files and return that file
+    //    only — the operator (or Paperclip server) has asked for an
+    //    exact single source.
     const explicit = cfgString(config?.instructionsFilePath);
     if (explicit && path.isAbsolute(explicit) && fs.existsSync(explicit)) {
       return fs.readFileSync(explicit, "utf8");
     }
 
-    // 2) Managed bundle default location.
-    const home = process.env.PAPERCLIP_HOME || "/paperclip";
-    const instance = process.env.PAPERCLIP_INSTANCE_ID || "production";
-    const entry = cfgString(config?.instructionsEntryFile) || "AGENTS.md";
+    // 2) Resolve the managed bundle root.
     const cid: string | undefined = ctx?.agent?.companyId;
     const aid: string | undefined = ctx?.agent?.id;
     if (!cid || !aid) return "";
 
-    const full = path.join(home, "instances", instance, "companies", cid, "agents", aid, "instructions", entry);
-    if (!fs.existsSync(full)) return "";
-    return fs.readFileSync(full, "utf8");
+    const explicitRoot = cfgString(config?.instructionsRootPath);
+    const root = explicitRoot && path.isAbsolute(explicitRoot)
+      ? explicitRoot
+      : path.join(
+          process.env.PAPERCLIP_HOME || "/paperclip",
+          "instances",
+          process.env.PAPERCLIP_INSTANCE_ID || "production",
+          "companies", cid, "agents", aid, "instructions",
+        );
+
+    // 3) When the operator pins a single entry file via
+    //    `adapterConfig.instructionsEntryFile`, honour it and read ONLY
+    //    that file — same shape as v0.1.x so existing wakes don't shift
+    //    semantically. Tier concatenation only kicks in for the default
+    //    "AGENTS.md" entry.
+    const entry = cfgString(config?.instructionsEntryFile);
+    if (entry && entry !== "AGENTS.md") {
+      const full = path.join(root, entry);
+      if (!fs.existsSync(full)) return "";
+      return fs.readFileSync(full, "utf8");
+    }
+
+    // 4) Default path: read every tier file that exists, in order.
+    //    Missing files are skipped silently so the agent works on a
+    //    bare bundle that only ships AGENTS.md (the v0.1.x behaviour).
+    const parts: string[] = [];
+    for (const name of tierOrder) {
+      const full = path.join(root, name);
+      if (!fs.existsSync(full)) continue;
+      const body = fs.readFileSync(full, "utf8");
+      if (!body.trim()) continue;
+      parts.push(`# ${name}\n\n${body.trim()}`);
+    }
+    return parts.join("\n\n---\n\n");
   } catch {
     return "";
   }

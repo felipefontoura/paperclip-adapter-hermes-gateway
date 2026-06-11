@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.2 — 2026-06-11
+
+- **feat**: read all four Hermes Agent identity tiers — `SOUL.md`, `AGENTS.md`,
+  `HEARTBEAT.md`, `TOOLS.md` — from the agent's `instructions/` directory and
+  concatenate them, in that order, into the system message. Mirrors the
+  layered bundle the local `hermes` CLI used to read off disk so an operator
+  who already maintains those four files keeps the same identity behaviour
+  when routed through the HTTP gateway. Files that don't exist or are empty
+  are skipped silently. The existing `adapterConfig.instructionsFilePath`
+  override (single-file mode) and a non-default
+  `adapterConfig.instructionsEntryFile` both still resolve to a single file
+  — tier concatenation only triggers on the default `"AGENTS.md"` entry.
+
+
 
 ## 0.1.1 — 2026-06-11
 
