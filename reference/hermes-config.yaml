@@ -1,0 +1,26 @@
+# Hermes Agent config — mount this file into the hermes-gateway container at
+# /opt/data/config.yaml:ro so the Hermes process picks it up at boot.
+#
+# This reference uses Z.ai's GLM-5.1 (coding-plan subscription endpoint). Swap
+# `custom_providers` and `model` for your own provider/api key as needed.
+#
+# The single piece that's specific to this adapter is the well_known_endpoints
+# entry — it's what lets Hermes discover Paperclip-managed skills through the
+# paperclip-skills-bridge without any volume share between containers.
+
+custom_providers:
+  - name: zai-coding-plan
+    provider_key: zai-coding-plan
+    base_url: https://api.z.ai/api/coding/paas/v4
+    api_key: ${ZAI_API_KEY}
+    model: glm-5.1
+
+model:
+  default: glm-5.1
+  provider: zai-coding-plan
+  base_url: https://api.z.ai/api/coding/paas/v4
+  api_key: ${ZAI_API_KEY}
+
+skills:
+  external_dirs: []
+  template_vars: true

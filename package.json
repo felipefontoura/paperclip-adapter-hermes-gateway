@@ -1,0 +1,64 @@
+{
+  "name": "@felipefontoura/paperclip-adapter-hermes-gateway",
+  "version": "0.1.0",
+  "description": "Paperclip external adapter for the Hermes Agent — talks to Hermes over the OpenAI-compatible HTTP API server, with no CLI inside the Paperclip container.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./server": {
+      "import": "./dist/server/index.js",
+      "types": "./dist/server/index.d.ts"
+    },
+    "./ui": {
+      "import": "./dist/ui/index.js",
+      "types": "./dist/ui/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "reference",
+    "docker-compose.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run clean && pnpm run typecheck && pnpm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "paperclip": {
+    "adapter": {
+      "type": "hermes_gateway",
+      "label": "Hermes Agent (Gateway)",
+      "category": "local",
+      "description": "Connects Paperclip to a Hermes Agent API server (OpenAI-compatible) over HTTP. Use with @felipefontoura/paperclip-skills-bridge to expose Paperclip skills to Hermes."
+    }
+  },
+  "keywords": [
+    "paperclip",
+    "paperclip-adapter",
+    "hermes",
+    "hermes-agent",
+    "openai-compatible"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/felipefontoura/paperclip-adapter-hermes-gateway"
+  }
+}

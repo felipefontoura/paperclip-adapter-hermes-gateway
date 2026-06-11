@@ -1,0 +1,28 @@
+# Changelog
+
+All notable changes to this project are documented here.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.1.0] - 2026-06-11
+
+Initial release.
+
+### Added
+- Paperclip external adapter type `hermes_gateway`, installable via `POST /api/adapters/install` or the Paperclip UI's "Install Adapter" dialog (npm package name `@felipefontoura/paperclip-adapter-hermes-gateway`).
+- Sends OpenAI-compatible chat completions to a Hermes Agent API server (`POST /v1/chat/completions`) on every wake; passes the agent's AGENTS.md bundle as the system message.
+- Discovers Paperclip skills at wake time via the companion bridge and lists each file URL in the system prompt (progressive disclosure).
+- Auto-discovery of the Paperclip `companyId` — operators never have to copy or paste the UUID; the adapter injects `/companies/<id>` into the bridge URL automatically.
+- Three-tier configuration: top-level `adapterConfig.<key>` (API PATCH) → `adapterConfig.env.<KEY>` (UI Environment Variables) → `process.env.<KEY>` (container-level).
+- SSRF guard rejecting `file://`, loopback, RFC1918, link-local, cloud-metadata, and cluster-internal targets before any bearer is sent.
+- Canonical `AdapterExecutionResult` shape (`signal: null`, `timedOut`, `provider`, normalized `usage`) so the Paperclip agent state transitions cleanly to `idle` on success.
+- Sanitized error bodies (token-shaped substrings redacted, truncated to 200 chars) before they are logged or surfaced.
+- `agentConfigurationSchema` exported for future Paperclip UI builds that render adapter-specific fields.
+
+### Documentation
+- User-focused README with install via the Paperclip UI, configuration via Environment Variables, and a small troubleshooting note for finding the company UUID.
+- Hardening audit in `docs/AUDIT-v0.1.0.md` covering every blocker and high-severity item closed before publish.
+
+[Unreleased]: https://github.com/felipefontoura/paperclip-adapter-hermes-gateway/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/felipefontoura/paperclip-adapter-hermes-gateway/releases/tag/v0.1.0
