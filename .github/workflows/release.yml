@@ -65,12 +65,12 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          # pnpm 11 reads only an explicit `_authToken` line in .npmrc — neither
-          # NODE_AUTH_TOKEN (from setup-node) nor a bare NPM_TOKEN env var are
-          # honored on publish. Write the line ourselves.
-          cat >> .npmrc <<RC
-          //registry.npmjs.org/:_authToken=${NPM_TOKEN}
-          RC
+          # pnpm 11 reads `_authToken` from $HOME/.npmrc; setup-node only writes
+          # to the project-local .npmrc, which pnpm ignores during publish.
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> "$HOME/.npmrc"
+          echo "always-auth=true" >> "$HOME/.npmrc"
+          # Sanity: confirm npm sees us as authenticated before pushing the tarball.
+          npm whoami --registry=https://registry.npmjs.org/
           pnpm publish --access public --no-git-checks
 
       - name: Pack tarball (artifact)
