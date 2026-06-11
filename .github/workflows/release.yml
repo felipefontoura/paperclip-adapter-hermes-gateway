@@ -65,15 +65,21 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          # pnpm 11 reads `_authToken` from $HOME/.npmrc; setup-node only writes
-          # to the project-local .npmrc, which pnpm ignores during publish.
-          # Granular tokens may 401 on /-/whoami (it requires the broad "read"
-          # scope). Skip the sanity GET and let the PUT speak for itself.
+          # setup-node leaves a project-local .npmrc with a placeholder
+          # NODE_AUTH_TOKEN that nothing expands at publish time. Strip it,
+          # then write the real token to $HOME/.npmrc.
+          rm -f .npmrc
           {
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}"
+            echo "registry=https://registry.npmjs.org/"
             echo "always-auth=true"
-          } >> "$HOME/.npmrc"
-          pnpm publish --access public --no-git-checks
+          } > "$HOME/.npmrc"
+          echo "--- $HOME/.npmrc (token redacted) ---"
+          sed "s|_authToken=.*|_authToken=<redacted>|" "$HOME/.npmrc"
+          # `npm publish` is more conservative than `pnpm publish` for the very
+          # first publish of a brand-new scoped package — fewer abstraction
+          # layers to misroute auth.
+          npm publish --access public
 
       - name: Pack tarball (artifact)
         run: pnpm pack
