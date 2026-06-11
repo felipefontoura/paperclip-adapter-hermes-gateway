@@ -125,7 +125,24 @@ export async function execute(ctx: ExecutionContextFull): Promise<ExecutionResul
       });
       if (idxResp.ok) {
         const idx: any = await idxResp.json();
-        const entries: any[] = Array.isArray(idx?.skills) ? idx.skills : [];
+        const allEntries: any[] = Array.isArray(idx?.skills) ? idx.skills : [];
+        // Honour the agent's selected skill set instead of pasting the whole
+        // company catalog into every wake. Paperclip stores it on the agent
+        // as `adapterConfig.paperclipSkillSync.desiredSkills` — entries are
+        // namespaced like "paperclipai/paperclip/<name>" or
+        // "local/<hash>/<name>"; the bridge index.json publishes only the
+        // leaf <name>, so we match by suffix.
+        const desiredSkills: unknown = adapterConfigAny?.paperclipSkillSync?.desiredSkills;
+        const desiredList: string[] = Array.isArray(desiredSkills)
+          ? desiredSkills.filter((s): s is string => typeof s === "string")
+          : [];
+        const entries: any[] = desiredList.length > 0
+          ? allEntries.filter(s => {
+              const name = typeof s?.name === "string" ? s.name : "";
+              if (!name) return false;
+              return desiredList.some(d => d === name || d.endsWith("/" + name));
+            })
+          : allEntries;
         if (entries.length > 0) {
           const blocks: string[] = entries.map(s => {
             const desc = (s.description || "").trim().slice(0, 200);

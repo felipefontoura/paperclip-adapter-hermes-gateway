@@ -1,6 +1,6 @@
 {
   "name": "@felipefontoura/paperclip-adapter-hermes-gateway",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Paperclip external adapter for the Hermes Agent — talks to Hermes over the OpenAI-compatible HTTP API server, with no CLI inside the Paperclip container.",
   "license": "MIT",
   "type": "module",
