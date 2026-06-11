@@ -232,15 +232,33 @@ export function readBundleEntry(ctx: any): string {
     // 4) Default path: read every tier file that exists, in order.
     //    Missing files are skipped silently so the agent works on a
     //    bare bundle that only ships AGENTS.md (the v0.1.x behaviour).
+    //
+    // Each tier ships with a short pre-system prompt naming the file +
+    // path and what role that file plays, mirroring how the upstream
+    // opencode-local adapter labels its loaded instructions
+    // ("The above agent instructions were loaded from <path>…"). Without
+    // these markers the model just sees a wall of concatenated markdown
+    // and can't tell SOUL identity claims from TOOLS examples.
+    const tierPurpose: Record<string, string> = {
+      "SOUL.md": "identity — who you are, your voice, your non-negotiables",
+      "AGENTS.md": "context — your role on this team, how you collaborate",
+      "HEARTBEAT.md": "cadence — what to do on every heartbeat / wake",
+      "TOOLS.md": "tools — what you can call and how",
+    };
     const parts: string[] = [];
     for (const name of tierOrder) {
       const full = path.join(root, name);
       if (!fs.existsSync(full)) continue;
       const body = fs.readFileSync(full, "utf8");
       if (!body.trim()) continue;
-      parts.push(`# ${name}\n\n${body.trim()}`);
+      const role = tierPurpose[name] ?? "agent instructions";
+      parts.push(
+        `<<< BEGIN ${name} — ${role} (loaded from ${full}) >>>\n\n` +
+        `${body.trim()}\n\n` +
+        `<<< END ${name} >>>`
+      );
     }
-    return parts.join("\n\n---\n\n");
+    return parts.join("\n\n");
   } catch {
     return "";
   }

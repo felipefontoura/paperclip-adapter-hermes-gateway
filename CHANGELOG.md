@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3 — 2026-06-11
+
+- **feat**: wrap each instruction tier in a labeled `<<< BEGIN <file> — <role> (loaded from <path>) >>>` / `<<< END <file> >>>` delimiter so the model can tell SOUL identity claims apart from TOOLS examples in the same system message. Mirrors how the upstream `opencode-local` adapter trails loaded instructions with "The above agent instructions were loaded from <path>", just done as a wrap-around marker so the order signal stays adjacent to each block.
+
+
 ## 0.1.2 — 2026-06-11
 
 - **feat**: read all four Hermes Agent identity tiers — `SOUL.md`, `AGENTS.md`,
