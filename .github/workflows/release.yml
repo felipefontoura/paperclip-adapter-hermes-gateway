@@ -76,9 +76,17 @@ jobs:
           } > "$HOME/.npmrc"
           echo "--- $HOME/.npmrc (token redacted) ---"
           sed "s|_authToken=.*|_authToken=<redacted>|" "$HOME/.npmrc"
-          # `npm publish` is more conservative than `pnpm publish` for the very
-          # first publish of a brand-new scoped package — fewer abstraction
-          # layers to misroute auth.
+          echo ""
+          echo "--- Token length / shape diagnostics ---"
+          echo "NPM_TOKEN length=${#NPM_TOKEN}"
+          echo "starts_with_npm_=$( [[ "${NPM_TOKEN:0:4}" == "npm_" ]] && echo yes || echo no )"
+          echo ""
+          echo "--- Direct registry probe (bypassing npm CLI entirely) ---"
+          curl -sS -i -H "Authorization: Bearer $NPM_TOKEN" https://registry.npmjs.org/-/whoami | head -5
+          echo ""
+          echo "--- npm whoami (granular tokens may 401; informational only) ---"
+          npm whoami --registry=https://registry.npmjs.org/ || true
+          echo ""
           npm publish --access public
 
       - name: Pack tarball (artifact)
